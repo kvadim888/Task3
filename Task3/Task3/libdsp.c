@@ -6,7 +6,7 @@ int32_t		dsp_db2gain(double gain)
 	return float_to_fix(scale);
 }
 
-uint32_t dsp_Gain(t_ringbuff *input, t_ringbuff *coeffs)
+uint32_t	dsp_Gain(t_ringbuff *input, t_ringbuff *coeffs)
 {
 	return fix_mul(input->ptr, coeffs->buff[0]);
 }

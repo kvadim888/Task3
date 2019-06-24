@@ -2,17 +2,27 @@
 #define LIBFIX_H
 
 #include <stdint.h>
+#include <stdio.h>
+
+#include <assert.h>
 
 #define PRECISION		31 
 #define SCALE			(double)(1LL << PRECISION)
 
-union u_long_fix
+
+typedef union	u_long_fix
 {
 	int64_t		num;
 	uint32_t	range[2];
-};
+}				long_fix;
 
-typedef union u_long_fix long_fix;
+typedef union
+{
+	uint64_t	int64;
+	uint32_t	int32[2];
+	uint16_t	int16[4];
+	uint8_t		int8[8];
+}				t_sample;
 
 int32_t	float_to_fix(double num);
 double	fix_to_float(int32_t num);

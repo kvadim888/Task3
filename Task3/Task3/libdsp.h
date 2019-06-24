@@ -1,10 +1,12 @@
 #ifndef LIBDSP_H
 #define LIBDSP_H
 
-#include "libfix.h"
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
+
+#include "libfix.h"
 
 /*==============================  RING BUFFER  ================ dsp_ring.c ===*/
 

@@ -1,6 +1,4 @@
 #include "libfix.h"
-#include <stdint.h>
-#include <stdio.h>
 
 int32_t	float_to_fix(double num)
 {
@@ -62,12 +60,12 @@ int32_t fix_mul(int32_t a, int32_t b)
 	return fix_round(mul);
 }
 
- int32_t fix_mac(int32_t acc, int32_t a, int32_t b)
+int32_t fix_mac(int32_t acc, int32_t a, int32_t b)
  {
  	return fix_add(acc, fix_mul(a, b));
  }
  
- int32_t fix_msub(int32_t acc, int32_t a, int32_t b)
+int32_t fix_msub(int32_t acc, int32_t a, int32_t b)
  {
  	return fix_sub(acc, fix_mul(a, b));
  }
@@ -85,4 +83,3 @@ int32_t	fix_rightshift(int32_t num, int8_t shift)
 	res.range[1] = num;
 	return fix_round(res.num >> shift);
 }
-
