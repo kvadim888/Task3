@@ -22,7 +22,7 @@ t_ringbuff *dsp_ringinit(size_t len, uint32_t *buff, size_t offset)
 	return ring;
 }
 
-void dsp_ringload(t_ringbuff *ring, uint32_t *buff, size_t len)
+void dsp_ringload(t_ringbuff *ring, uint8_t *buff, size_t samplen, size_t len)
 {
 	if (ring->len <= len)
 	{

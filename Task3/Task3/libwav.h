@@ -72,6 +72,6 @@ int16_t		swap_int16(int16_t val);
 uint32_t	swap_uint32(uint32_t val);
 int32_t		swap_int32(int32_t val);
 
-void	log_memory(uint8_t *memory, size_t len);
+void		log_memory(uint8_t *memory, size_t len);
 
 #endif

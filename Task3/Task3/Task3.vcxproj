@@ -166,6 +166,12 @@
     <ClInclude Include="libfix.h" />
     <ClInclude Include="libwav.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Media Include="example.wav" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="fir128.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

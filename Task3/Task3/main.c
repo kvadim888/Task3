@@ -9,8 +9,6 @@
 int main(int ac, char **av)
 {
 	size_t		len = 0;
-	//int16_t		*buffer_in;
-	//int16_t		*buffer_out;
 
 	if (ac != 4)
 	{
@@ -24,16 +22,23 @@ int main(int ac, char **av)
 	wav_initbuff(input->buffer, &input->header, FIR->len);
 
 	t_wavfile *output = wav_wropen(av[2], &input->header, input->buffer);
-	
-	t_ringbuff *ring_in = dsp_newring(input->buffer->datalen, input->buffer->datalen);
-	t_ringbuff *ring_out = dsp_newring(input->buffer->datalen, input->buffer->datalen);
 
-	g_buffIO = wav_getbuffIO(input->header.block_align * input->buffer->datalen);
+	t_ringbuff **ring_in = malloc(buffer->channels * sizeof(t_ringbuff*));
+	for (size_t i = 0; i < buffer->channels; i++)
+		ring_in[i] = dsp_newring(input->buffer->datalen * 2, input->buffer->datalen);
+
+	t_ringbuff **ring_out = malloc(buffer->channels * sizeof(t_ringbuff*));
+	for (size_t i = 0; i < buffer->channels; i++)
+		ring_out[i] = dsp_newring(output->buffer->datalen * 2, output->buffer->datalen);
+
 	while ((len = wav_read(input)) > 0)
 	{
-//		dsp_ringload(ring_in, input->buffer->data, input->buffer->datalen);
-//		dsp_ringproc(ring_in, ring_out, FIR, dsp_FIR);
-//		dsp_ringpull(output->buffer->data, ring_out, output->buffer->datalen)
+		for (size_t i = 0; i < buffer->channels; i++)
+		{
+			dsp_ringload(ring_in[i], input->buffer->data[i], input->buffer->datalen);
+			dsp_ringproc(ring_in[i], ring_out[i], FIR, dsp_FIR);
+			dsp_ringpull(output->buffer->data[i], ring_out[i], output->buffer->datalen);
+		}
 		len = wav_write(output, len);
 	}
 
