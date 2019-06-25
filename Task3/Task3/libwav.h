@@ -10,7 +10,7 @@
 
 #include "libfix.h"
 
-uint8_t *g_rwbuff;
+uint8_t *g_buffIO;
 
 #pragma pack(push, 1)
 // WAVE file header format
@@ -35,7 +35,7 @@ typedef struct
 
 typedef struct
 {
-	uint8_t		**data;
+	uint8_t	**data;
 	size_t		channels;
 	size_t		datalen;
 	size_t		samplen;
@@ -50,15 +50,18 @@ typedef	struct
 
 #pragma pack(pop)
 
-uint8_t		*wav_getrwbuff(size_t len); // getter for g_rwbuff
+uint8_t		*wav_getbuffIO(size_t len); // getter for g_rwbuff
 
 int			wav_initbuff(t_wavbuffer *buffer, t_wavheader *header, size_t datalen);
 
 t_wavfile	*wav_rdopen(const char *path, t_wavbuffer *buffer);
 t_wavfile	*wav_wropen(const char *path, t_wavheader *header, t_wavbuffer *buffer);
 
+size_t		wav_rwbuffsplit(uint8_t *rwbuff, t_wavbuffer *buffer, size_t len);
+size_t		wav_rwbuffmerge(uint8_t *rwbuff, t_wavbuffer *buffer);
+
 size_t		wav_read(t_wavfile *file);
-size_t		wav_write(t_wavfile *file);
+size_t		wav_write(t_wavfile *file, size_t datalen);
 
 void		wav_info(const char *filename, t_wavheader *header);
 void		wav_close(t_wavfile **wavfile);
@@ -68,5 +71,7 @@ uint16_t	swap_uint16(uint16_t val);
 int16_t		swap_int16(int16_t val);
 uint32_t	swap_uint32(uint32_t val);
 int32_t		swap_int32(int32_t val);
+
+void	log_memory(uint8_t *memory, size_t len);
 
 #endif

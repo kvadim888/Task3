@@ -1,10 +1,11 @@
 #include "libwav.h"
 
-uint8_t		*wav_getrwbuff(size_t len)
+uint8_t		*wav_getbuffIO(size_t len)
 {
-	if (g_rwbuff == NULL)
-		g_rwbuff = calloc(len, sizeof(uint8_t));
-	return (g_rwbuff);
+	//uint8_t *rwbuff = calloc(len, sizeof(uint8_t));
+	if (g_buffIO == NULL)
+		g_buffIO = calloc(len, sizeof(uint8_t));
+	return (g_buffIO);
 }
 
 int			wav_initbuff(t_wavbuffer * buffer, t_wavheader * header, size_t datalen)
@@ -13,9 +14,9 @@ int			wav_initbuff(t_wavbuffer * buffer, t_wavheader * header, size_t datalen)
 		return 1;
 	buffer->datalen = datalen;
 	buffer->channels = header->channels;
-	buffer->samplen = header->bits_per_sample / 8;
+	buffer->samplen = header->block_align / header->channels;
 	buffer->data = malloc(buffer->channels * sizeof(uint8_t*));
-	for (int i = 0; i < buffer->channels; i++)
+	for (size_t i = 0; i < buffer->channels; i++)
 		buffer->data[i] = calloc(buffer->datalen, buffer->samplen);
 	return 0;
 }
@@ -77,43 +78,62 @@ size_t		wav_read(t_wavfile * file)
 {
 	if (file == NULL || file->fs == NULL)
 		return 0;
-	g_rwbuff = wav_getrwbuff(file->buffer->samplen * file->buffer->channels * file->buffer->datalen);
-	size_t len = fread(g_rwbuff, file->buffer->samplen, file->buffer->datalen, file->fs);
-	size_t datalen = len / (file->buffer->samplen * file->buffer->channels);
-	assert(len % datalen);
-	t_sample	sample;
-//	for (int i = 0; i < datalen; i++)
-//	{
-//		for (int j = 0; j < file->buffer->channels; j++)
-//		{
-//			if (file->buffer->samplen == 1)
-//				sample.int8[7] = (uint8_t) *(g_rwbuff + i * file->buffer->samplen * file->buffer->channels + j * file->buffer->samplen);
-//			else if (file->buffer->samplen == 2)
-//				sample.int16[3] = (uint16_t) *(g_rwbuff + i * file->header.block_align + j * file->buffer->samplen);
-//			else if (file->buffer->samplen == 4)
-//				sample.int32[1] = (uint32_t) *(g_rwbuff + i * file->header.block_align + j * file->buffer->samplen);
-//			file->buffer->data[j][i] = sample.int32[1];
-//		}
-//	}
-	memset(g_rwbuff, 0, len);
+	g_buffIO = wav_getbuffIO(file->header.block_align * file->buffer->datalen);
+	size_t len = fread(g_buffIO, file->header.block_align, file->buffer->datalen, file->fs);
+	size_t datalen = wav_rwbuffsplit(g_buffIO, file->buffer, len * file->header.block_align);
 	return datalen;
 }
 
-size_t		wav_write(t_wavfile * file)
+size_t		wav_write(t_wavfile *file, size_t datalen)
 {
-	t_sample	sample;
 	if (file == NULL || file->fs == NULL)
 		return 0;
-	g_rwbuff = wav_getrwbuff(file->header.block_align * file->buffer->datalen);
-	memset(g_rwbuff, 0, file->header.block_align * file->buffer->datalen);
-//	for (size_t i = 0; i < file->buffer->datalen; i++)
-//	{
-//		for (size_t j = 0; j < file->buffer->channels; j++)
-//			memcpy(g_rwbuff + i * file->header.block_align + j * file->buffer->samplen,
-//				file->buffer->data[j][i], file->buffer->samplen);
-//	}
-	size_t len = fwrite(g_rwbuff, file->header.block_align, file->buffer->datalen, file->fs);
+	g_buffIO = wav_getbuffIO(file->header.block_align * file->buffer->datalen);
+	memset(g_buffIO, 0, file->header.block_align * file->buffer->datalen);
+	wav_rwbuffmerge(g_buffIO, file->buffer);
+	size_t len = fwrite(g_buffIO, file->header.block_align, datalen, file->fs);
 	return len / file->header.block_align;
+}
+
+size_t		wav_rwbuffsplit(uint8_t *buffIO, t_wavbuffer *buffer, size_t len)
+{
+	size_t		block_align = buffer->channels * buffer->samplen;
+	uint8_t		*ptr;
+
+	/* for dubugging */
+	//printf("before:\n");
+	//log_memory(buffIO, len);
+	for (size_t j = 0; j < buffer->channels; j++)
+	{
+		ptr = buffIO + j * buffer->samplen;
+		memset(buffer->data[j], 0, buffer->samplen * buffer->datalen);
+		for (size_t i = 0; i < buffer->datalen * buffer->samplen; i+=buffer->samplen)
+		{
+			memcpy(&buffer->data[j][i], ptr, buffer->samplen);
+			ptr += block_align;
+		}
+	}
+	return len / block_align;
+}
+
+size_t		wav_rwbuffmerge(uint8_t *buffIO, t_wavbuffer *buffer)
+{
+	size_t		block_align = buffer->channels * buffer->samplen;
+	uint8_t		*ptr;
+
+	for (size_t j = 0; j < buffer->channels; j++)
+	{
+		ptr = buffIO + j * buffer->samplen;
+		for (size_t i = 0; i < buffer->datalen * buffer->samplen; i+=buffer->samplen)
+		{
+			memcpy(ptr, &buffer->data[j][i], buffer->samplen);
+			ptr += block_align;
+		}
+	}
+	/* for dubugging */
+	//printf("after:\n");
+	//log_memory(buffIO, block_align * buffer->datalen);
+	return block_align * buffer->datalen;
 }
 
 void		wav_close(t_wavfile **wavfile)
@@ -176,4 +196,18 @@ int32_t		swap_int32(int32_t val)
 {
     val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF ); 
     return (val << 16) | ((val >> 16) & 0xFFFF);
+}
+
+void		log_memory(uint8_t *memory, size_t len)
+{
+	size_t width = 32;
+	for (size_t i = 0; i < len; i++)
+	{
+		if (i % width == 0)
+			printf("%.3p : ", (uint8_t *)(memory + i));
+		printf("%.2x ", memory[i]);
+		if ((i+1)  % width == 0)
+			printf("\n");
+	}
+	printf("\n");
 }

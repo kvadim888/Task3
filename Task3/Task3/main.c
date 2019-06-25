@@ -9,8 +9,8 @@
 int main(int ac, char **av)
 {
 	size_t		len = 0;
-	int16_t		*buffer_in;
-	int16_t		*buffer_out;
+	//int16_t		*buffer_in;
+	//int16_t		*buffer_out;
 
 	if (ac != 4)
 	{
@@ -28,24 +28,13 @@ int main(int ac, char **av)
 	t_ringbuff *ring_in = dsp_newring(input->buffer->datalen, input->buffer->datalen);
 	t_ringbuff *ring_out = dsp_newring(input->buffer->datalen, input->buffer->datalen);
 
-	g_rwbuff = NULL;
+	g_buffIO = wav_getbuffIO(input->header.block_align * input->buffer->datalen);
 	while ((len = wav_read(input)) > 0)
 	{
-		printf("len = %zu [%s]\n", len, g_rwbuff);
-		for (int i = 0; i < input->buffer->channels; i++)
-		{
-			printf("ch[%d] = ", i);
-			for (int j = 0; j < input->buffer->datalen; j++)
-			{
-				printf("%.4f ", fix_to_float(input->buffer->data[i][j]));
-			}
-			printf("\n");
-		}
 //		dsp_ringload(ring_in, input->buffer->data, input->buffer->datalen);
 //		dsp_ringproc(ring_in, ring_out, FIR, dsp_FIR);
-//		dsp_ringpull(output->buffer->data, ring_out, output->buffer->datalen);
-		len = wav_write(output);
-		printf("len = %zu [%s]\n", len, g_rwbuff);
+//		dsp_ringpull(output->buffer->data, ring_out, output->buffer->datalen)
+		len = wav_write(output, len);
 	}
 
 	wav_close(&input);
